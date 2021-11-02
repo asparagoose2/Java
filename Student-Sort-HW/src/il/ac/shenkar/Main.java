@@ -22,13 +22,6 @@ public class Main {
         students.add(new Student(1010,"Moshe",98.4));
         students.add(new Student(1111,"Aharon",88.2));
 
-        students.forEach(new Consumer<Student>() {
-            @Override
-            public void accept(Student student) {
-                System.out.println(student);
-            }
-        });
-
         Collections.sort(students, new Comparator<Student>() {
             @Override
             public int compare(Student student, Student t1) {
