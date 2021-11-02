@@ -1,9 +1,12 @@
 package il.ac.shenkar;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.function.Consumer;
+
+/*
+    Work of Koral Tsaba & Ofir Duchovne
+ */
 
 public class Main {
 
