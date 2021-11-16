@@ -1,5 +1,5 @@
 package il.ac.shenkar;
-
+// Koral Tsaba & Ofir Duchovne
 public class ThreadEx {
     public static void main(String[] args) {
         Thread t1 ,t2;
