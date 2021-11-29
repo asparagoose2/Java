@@ -177,7 +177,6 @@ public class ClientGUI implements StringConsumer, StringProducer {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                System.out.println("Creating lable with text: " + str + Thread.currentThread().getName());
                 JLabel newMSG = new JLabel(str);
                 newMSG.setFont(font);
                 messagesPanel.add(newMSG);
