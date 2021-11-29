@@ -5,7 +5,10 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 
 public class ClientGUI implements StringConsumer, StringProducer {
@@ -15,6 +18,8 @@ public class ClientGUI implements StringConsumer, StringProducer {
     private Socket socket;
     private ConnectionProxy cp;
     private static int port = 1234;
+
+    boolean dialogFlag = false;
 
     // UI components
     private JFrame frame;
@@ -33,49 +38,92 @@ public class ClientGUI implements StringConsumer, StringProducer {
 
     public static void main(String[] args) throws ChatException {
         ClientGUI g;
+
         try {
-            g = new ClientGUI(new Socket("localhost", port));
-            g.setNickname(args[0]);
-            System.out.println("Client Conected!");
+            g = new ClientGUI();
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    g.init();
+                }
+            });
+            g.connectionDialog();
+            g.connect(new Socket("localhost", port));
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    g.nicknameLabel.setText("Connected as: " + g.nickname);
+                }
+            });
+
         } catch (IOException e) {
             throw new ChatException("ClientGUI main()",e);
         }
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                g.init();
-            }
-        });
-        g.consume("bla bla");
+
     }
+
+    public void connectionDialog() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    setNickname(JOptionPane.showInputDialog("Enter Name"));
+                    if(nickname == null || (nickname != null && ("".equals(nickname))))
+                    {
+                        System.exit(1);
+                    }
+                    dialogFlag = true;
+
+                }
+            });
+        } catch (InvocationTargetException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public void setNickname(String nickname) {
         this.nickname = nickname;
     }
 
-    public ClientGUI(Socket s) throws ChatException {
-        this.nickname = "default";
-        cp = new ConnectionProxy(s);
-        cp.addConsumer(this);
-        this.addConsumer(cp);
-        cp.start();
-        System.out.println("Client!");
-
+    public ClientGUI() throws ChatException {
+        this.nickname = "Disconnected";
 
         sendMessageActionListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                consume(nickname + ": " + inputField.getText());
+                cp.consume(nickname + ": " + inputField.getText());
                 inputField.setText("");
             }
         };
 
     }
 
+    public void connect(Socket s) throws ChatException {
+        cp = new ConnectionProxy(s);
+        cp.addConsumer(this);
+        cp.setProducer(this);
+        this.addConsumer(cp);
+        cp.start();
+        cp.consume(nickname + " Connected!");
+    }
+
     private void init() {
         frame = new JFrame();
         frame.setSize(1000,1400);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent windowEvent) {
+                try {
+                    cp.consume(nickname + " Disconnected!");
+                    cp.disconnect();
+                } catch (ChatException e) {
+                    e.printStackTrace();
+                }
+                super.windowClosing(windowEvent);
+            }
+        });
         frame.setLayout(new BorderLayout());
 
         // Setting the message list part
@@ -107,7 +155,7 @@ public class ClientGUI implements StringConsumer, StringProducer {
         header.setBorder(new EmptyBorder(10, 10, 10, 10));
         header.setPreferredSize(new Dimension(1000, 50));
         header.setBackground(Color.orange);
-        nicknameLabel = new JLabel("Logged in as: " + nickname);
+        nicknameLabel = new JLabel(nickname);
         nicknameLabel.setFont(font);
         applicationTitle = new JLabel("Chat Application");
         applicationTitle.setFont(font);
@@ -121,19 +169,6 @@ public class ClientGUI implements StringConsumer, StringProducer {
         frame.add(inputPanel, BorderLayout.SOUTH);
         frame.add(header, BorderLayout.NORTH);
         frame.setVisible(true);
-        for(int i = 0; i < 100; i ++)
-        {
-            JLabel t = new JLabel("test");
-            t.setFont(new Font("ariel", Font.PLAIN, 22));
-            messagesPanel.add(t);
-
-        }
-
-
-    }
-
-    void sendMSG(String s) {
-        cp.consume(s);
     }
 
     @Override
@@ -142,10 +177,13 @@ public class ClientGUI implements StringConsumer, StringProducer {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
+                System.out.println("Creating lable with text: " + str + Thread.currentThread().getName());
                 JLabel newMSG = new JLabel(str);
                 newMSG.setFont(font);
                 messagesPanel.add(newMSG);
                 messagesScroller.getVerticalScrollBar().setValue( messagesScroller.getVerticalScrollBar().getMaximum());
+                frame.validate();
+                frame.repaint();
             }
         });
 

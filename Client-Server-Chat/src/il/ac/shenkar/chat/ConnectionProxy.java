@@ -29,32 +29,53 @@ public class ConnectionProxy extends Thread implements StringConsumer, StringPro
 
     }
 
-//    public void start() {
-//        listen();
-//    }
+    public StringProducer getProducer() {
+        return producer;
+    }
+
+    public void setProducer(StringProducer producer) {
+        this.producer = producer;
+    }
 
     public void run() {
         Thread alwaysListeningThread = new Thread( new Runnable() {
             @Override
             public void run() {
-                while(true) {
+
                     try {
-                        dis = new DataInputStream(socket.getInputStream());
-                        System.out.println("Reading UTF() " + Thread.currentThread().getName());
-                        message = dis.readUTF();
-                        synchronized (consumer) {
-                            consumer.consume(message);
+                        while(!socket.isClosed()) {
+                            message = dis.readUTF();
+                            synchronized (consumer) {
+                                consumer.consume(message);
+                            }
                         }
                     } catch (IOException e) {
-                        e.printStackTrace();
+
                     } finally {
+                        try {
+                            disconnect();
+                        } catch (ChatException e) {
+                            e.printStackTrace();
+                        }
                         removeConsumer(consumer);
                     }
                 }
-            }
+
         });
         alwaysListeningThread.start();
     }
+
+    public void disconnect() throws ChatException {
+        this.producer.removeConsumer(this);
+        if(!this.socket.isClosed()) {
+            try {
+                this.socket.close();
+            } catch (IOException e) {
+                throw new ChatException("closing socket", e);
+            }
+        }
+    }
+
 
     @Override
     public void consume(String str) {

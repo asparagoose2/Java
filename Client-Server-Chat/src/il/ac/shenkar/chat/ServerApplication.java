@@ -7,6 +7,8 @@ import java.net.Socket;
 public class ServerApplication
     {
 
+        private static int port = 1234;
+
         public static void main (String args[]) {
 
             ServerSocket server = null;
@@ -14,11 +16,13 @@ public class ServerApplication
             MessageBoard mb = new MessageBoard();
 
             try {
-                server = new ServerSocket(1234, 5);
+                server = new ServerSocket(port, 5);
 
             } catch(IOException e) {
                 e.printStackTrace();
             }
+
+            System.out.println("Server running on port: " + port);
 
             Socket socket = null;
 
@@ -30,10 +34,11 @@ public class ServerApplication
             {
                 try {
                     socket = server.accept();
-                    System.out.println("new client!");
+                    System.out.println("New Connection!");
                     connection = new ConnectionProxy(socket);
                     client = new ClientDescriptor();
                     connection.addConsumer(client);
+                    connection.setProducer(mb);
                     client.addConsumer(mb);
                     mb.addConsumer(connection);
                     connection.start();
