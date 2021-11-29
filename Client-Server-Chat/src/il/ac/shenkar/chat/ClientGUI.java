@@ -3,10 +3,7 @@ package il.ac.shenkar.chat;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
@@ -62,6 +59,12 @@ public class ClientGUI implements StringConsumer, StringProducer {
 
     }
 
+    private void jTextField1KeyPressed(java.awt.event.KeyEvent evt) {
+        if(evt.getKeyCode() == KeyEvent.VK_ENTER) {
+            sendMSG();
+        }
+    }
+
     public void connectionDialog() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -92,11 +95,17 @@ public class ClientGUI implements StringConsumer, StringProducer {
         sendMessageActionListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                cp.consume(nickname + ": " + inputField.getText());
-                inputField.setText("");
+                sendMSG();
             }
         };
 
+    }
+
+    private void sendMSG() {
+        if(!inputField.getText().equals("")) {
+            cp.consume(nickname + ": " + inputField.getText());
+            inputField.setText("");
+        }
     }
 
     public void connect(Socket s) throws ChatException {
@@ -144,6 +153,12 @@ public class ClientGUI implements StringConsumer, StringProducer {
         inputField = new JTextField();
         inputField.setFont(font);
         inputField.setPreferredSize(new Dimension(850,50));
+        inputField.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                sendMSG();
+            }
+        });
         inputPanel.add(inputField, BorderLayout.WEST);
         inputPanel.add(btnSend, BorderLayout.EAST);
         inputPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
