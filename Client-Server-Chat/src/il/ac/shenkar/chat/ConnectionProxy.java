@@ -20,6 +20,9 @@ public class ConnectionProxy extends Thread implements StringConsumer, StringPro
 
     public ConnectionProxy(Socket socket) throws ChatException {
         this.socket = socket;
+        if (socket.isClosed()) {
+            throw new ChatException("Socket is closed!");
+        }
         try {
             this.dis = new DataInputStream(socket.getInputStream());
             this.dos = new DataOutputStream(socket.getOutputStream());
@@ -82,7 +85,6 @@ public class ConnectionProxy extends Thread implements StringConsumer, StringPro
         try {
             dos.writeUTF(str);
             dos.flush();
-            return;
         } catch (IOException e) {
             e.printStackTrace();
         }

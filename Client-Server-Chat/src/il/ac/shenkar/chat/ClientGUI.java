@@ -12,7 +12,7 @@ public class ClientGUI implements StringConsumer, StringProducer {
 
     // Client Data
     private String nickname;
-    private Socket socket;
+    private static Socket socket;
     private ConnectionProxy cp;
     private static int port = 1234;
 
@@ -34,10 +34,17 @@ public class ClientGUI implements StringConsumer, StringProducer {
     private ActionListener sendMessageActionListener;
 
     public static void main(String[] args) throws ChatException {
-        ClientGUI g;
+        ClientGUI g = new ClientGUI();
 
         try {
-            g = new ClientGUI();
+            socket = new Socket("localhost", port);
+        } catch (IOException e) {
+            g.connectionErrorDialog();
+
+        }
+
+        try {
+//            g = new ClientGUI();
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
@@ -46,6 +53,7 @@ public class ClientGUI implements StringConsumer, StringProducer {
             });
             g.connectionDialog();
             g.connect(new Socket("localhost", port));
+
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
@@ -81,6 +89,23 @@ public class ClientGUI implements StringConsumer, StringProducer {
             });
         } catch (InvocationTargetException | InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void connectionErrorDialog() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    JOptionPane.showMessageDialog(frame,"Server is not available!","Server Error!", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } finally {
+            System.exit(1);
         }
     }
 
